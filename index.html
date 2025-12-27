@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESP Control</title>
+</head>
+<body>
+  <h1>ESP Control</h1>
+  <button onclick="toggle('led')">LED</button>
+  <button onclick="toggle('buzzer')">Buzzer</button>
+
+  <script>
+    async function toggle(device) {
+      try {
+        // Получаем текущее состояние
+        const res = await fetch(`/api/devices/${device}`);
+        const data = await res.json();
+        const newState = !data.state;
+
+        // Отправляем новое состояние
+        await fetch(`/api/devices/${device}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: newState })
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>
