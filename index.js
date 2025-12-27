@@ -1,39 +1,31 @@
-const express = require("express");
+const express = require('express');
+const cors = require('cors');
 const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(cors());
 app.use(express.json());
+app.use(express.static('public')); // для index.html
 
-let ledState = false;
-let buzzerState = false;
+// Состояние устройств
+let devices = {
+  led: false,
+  buzzer: false
+};
 
-// Главная страница с кнопками
-app.get("/", (req, res) => {
-  res.send(`
-    <h2>ESP8266 Control</h2>
-    <button onclick="fetch('/api/devices/led',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:true})})">LED ON</button>
-    <button onclick="fetch('/api/devices/led',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:false})})">LED OFF</button>
-    <br><br>
-    <button onclick="fetch('/api/devices/buzzer',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:true})})">Buzzer ON</button>
-    <button onclick="fetch('/api/devices/buzzer',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:false})})">Buzzer OFF</button>
-  `);
+// API для ESP и фронтенда
+app.get('/api/devices', (req, res) => {
+  res.json(devices);
 });
 
-// API для ESP
-app.get("/api/devices", (req,res) => {
-  res.json({led: ledState, buzzer: buzzerState});
+app.patch('/api/devices/:device', (req, res) => {
+  const device = req.params.device;
+  if (devices.hasOwnProperty(device)) {
+    devices[device] = req.body.state;
+    res.json({ success: true, device: device, state: devices[device] });
+  } else {
+    res.status(404).json({ error: 'Device not found' });
+  }
 });
 
-app.patch("/api/devices/led", (req,res) => {
-  ledState = req.body.state;
-  console.log("LED:", ledState);
-  res.send("OK");
-});
-
-app.patch("/api/devices/buzzer", (req,res) => {
-  buzzerState = req.body.state;
-  console.log("Buzzer:", buzzerState);
-  res.send("OK");
-});
-
-// Запуск сервера
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(port, () => console.log(`Server running on port ${port}`));
