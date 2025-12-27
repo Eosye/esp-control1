@@ -1,28 +1,56 @@
 const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+
 const app = express();
+const port = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(cors());
+app.use(bodyParser.json());
 
-let state = {
-  led: false,
-  buzzer: false
-};
+// состояния устройств
+let ledState = false;    // D2
+let buzzerState = false; // D1
 
-app.get("/api/state", (req, res) => {
-  res.json(state);
+// Получить текущее состояние
+app.get("/api/devices", (req, res) => {
+  res.json({
+    led: ledState,
+    buzzer: buzzerState
+  });
 });
 
-app.post("/api/led", (req, res) => {
-  state.led = req.body.state;
-  res.json(state);
+// Светодиод
+app.get("/api/devices/led", (req, res) => {
+  res.send(ledState ? "ON" : "OFF");
 });
 
-app.post("/api/buzzer", (req, res) => {
-  state.buzzer = req.body.state;
-  res.json(state);
+app.patch("/api/devices/led", (req, res) => {
+  if (typeof req.body.state === "boolean") {
+    ledState = req.body.state;
+    res.send("OK");
+  } else {
+    res.status(400).send("Bad request");
+  }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Server started on port", PORT);
+// Спикер
+app.get("/api/devices/buzzer", (req, res) => {
+  res.send(buzzerState ? "ON" : "OFF");
+});
+
+app.patch("/api/devices/buzzer", (req, res) => {
+  if (typeof req.body.state === "boolean") {
+    buzzerState = req.body.state;
+    res.send("OK");
+  } else {
+    res.status(400).send("Bad request");
+  }
+});
+
+// Статический фронтенд (если есть)
+app.use(express.static("public"));
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
